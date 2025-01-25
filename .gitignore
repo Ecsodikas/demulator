@@ -1,0 +1,27 @@
+*.html
+
+Thumbs.db
+
+# CHM
+/chm
+*.chm
+*.exe
+*.obj
+/chmgen
+*.o
+
+images/*.pdf
+
+/web
+
+.dub/
+dpl-docs/dpl-docs
+
+/chm-nav*.json
+/d-*.tag
+/d-tags-*.json
+/.generated
+
+# Generated changelogs
+changelog/*_pre.dd
+changelog/pending.dd

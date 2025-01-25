@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"Timo Netzer"
+	],
+	"copyright": "Copyright © 2025, Timo Netzer",
+	"description": "A gameboy emulator in D.",
+	"license": "MIT",
+	"name": "demulator"
+}
