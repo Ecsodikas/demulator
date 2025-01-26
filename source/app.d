@@ -1,10 +1,10 @@
 import std.stdio;
 import core.bitop;
 import cpu;
+import instructionset;
+import util;
 
 void main()
 {
 
-    ubyte a = 0b00000001;
-    writefln("%b", cast(ubyte)~a);
 }
