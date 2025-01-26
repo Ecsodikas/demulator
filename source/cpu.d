@@ -211,13 +211,58 @@ pure Tuple!(bool, ubyte) underflowingSub(ubyte a, ubyte b)
     return tuple(isUnderflowing, result);
 }
 
+pure bool bit(Cpu cpu, Register r, ubyte b)
+{
+    //TODO
+    return bt(cast(ulong) cpu.getRegisterValue(r), cast(ulong) b);
+}
+
+pure Cpu cpl(Cpu cpu)
+{
+    Cpu nCpu = cpu;
+    Flags f;
+    nCpu.registers.f = f;
+    nCpu.registers.a = cast(ubyte)~nCpu.registers.a;
+
+    return nCpu;
+}
+
+pure Cpu rrla(Cpu cpu)
+{
+
+    Cpu nCpu = cpu;
+    Flags f;
+    nCpu.registers.f = f;
+
+    import core.bitop;
+
+    nCpu.registers.a = rol(nCpu.registers.a, 1);
+
+    return nCpu;
+}
+
+pure Cpu rrca(Cpu cpu)
+{
+
+    Cpu nCpu = cpu;
+    Flags f;
+    nCpu.registers.f = f;
+
+    import core.bitop;
+
+    nCpu.registers.a = ror(nCpu.registers.a, 1);
+
+    return nCpu;
+}
+
 // We have to test this thing. Nobody know what this is doing. Even the gods.
 pure Cpu rla(Cpu cpu)
 {
     Cpu nCpu = cpu;
     ushort cFlag = nCpu.registers.f.carry ? 1 : 0;
-    ushort newA = (nCpu.registers.a << 1) + cFlag;
+    ushort newA = cast(ushort)((nCpu.registers.a << 1) + cFlag);
 
+    Flags f;
     f.carry = newA > 0xFF;
     nCpu.registers.f = f;
     nCpu.registers.a = cast(ubyte) newA;
@@ -229,11 +274,11 @@ pure Cpu rra(Cpu cpu)
 {
     Cpu nCpu = cpu;
     ushort cFlag = nCpu.registers.f.carry ? 1 : 0;
-    ushort newA = (nCpu.registers.a >> 1)
-        + (cFlag << 7)
-        + (
-            (nCpu.registers.a & 1) << 8
-        );
+    ushort newA = cast(ushort)((nCpu.registers.a >> 1)
+            + (cFlag << 7)
+            + (
+                (nCpu.registers.a & 1) << 8
+            ));
 
     Flags f;
     f.carry = newA > 0xFF;
