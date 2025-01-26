@@ -211,10 +211,82 @@ pure Tuple!(bool, ubyte) underflowingSub(ubyte a, ubyte b)
     return tuple(isUnderflowing, result);
 }
 
-pure bool bit(Cpu cpu, Register r, ubyte b)
+pure Cpu swap(Cpu cpu, Register r)
 {
-    //TODO
-    return bt(cast(ulong) cpu.getRegisterValue(r), cast(ulong) b);
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    ubyte ln = rVal && 0x0F;
+    ubyte rn = rVal && 0xF0;
+    ubyte n = cast(ubyte)((ln << 4) | (rn >> 4));
+
+    return nCpu.setRegisterValue(r, n);
+}
+
+pure Cpu sla(Cpu cpu, Register r)
+{
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    ubyte signVal = rVal & 0b10000000;
+    rVal = cast(ubyte)(rVal << 1);
+    nCpu = setRegisterValue(nCpu, r, (rVal | signVal));
+
+    return nCpu;
+}
+
+pure Cpu sra(Cpu cpu, Register r)
+{
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    ubyte signVal = rVal & 0b10000000;
+    rVal = rVal >> 1;
+    nCpu = setRegisterValue(nCpu, r, (rVal | signVal));
+
+    return nCpu;
+}
+
+pure Cpu srl(Cpu cpu, Register r)
+{
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    rVal = rVal >> 1;
+    nCpu = setRegisterValue(nCpu, r, rVal);
+
+    return nCpu;
+}
+
+pure Cpu set(Cpu cpu, Register r, ubyte b)
+{
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    rVal = cast(ubyte)(rVal | (1 << b));
+    nCpu = setRegisterValue(nCpu, r, rVal);
+
+    return nCpu;
+}
+
+pure Cpu reset(Cpu cpu, Register r, ubyte b)
+{
+    Cpu nCpu = cpu;
+    ubyte rVal = nCpu.getRegisterValue(r);
+    rVal = (rVal & (1 << b));
+    nCpu = setRegisterValue(nCpu, r, rVal);
+
+    return nCpu;
+}
+
+pure Cpu bit(Cpu cpu, Register r, ubyte b)
+{
+    Cpu nCpu = cpu;
+
+    ubyte rVal = nCpu.getRegisterValue(r);
+    ubyte test = rVal & (1 << b);
+
+    Flags f;
+    f.zero = test == 0;
+
+    nCpu.registers.f = f;
+
+    return nCpu;
 }
 
 pure Cpu cpl(Cpu cpu)
@@ -225,6 +297,19 @@ pure Cpu cpl(Cpu cpu)
     nCpu.registers.a = cast(ubyte)~nCpu.registers.a;
 
     return nCpu;
+}
+
+pure Cpu rlc(Cpu cpu, Register r)
+{
+
+    Cpu nCpu = cpu;
+    Flags f;
+    nCpu.registers.f = f;
+
+    import core.bitop;
+
+    ubyte rVal = getRegisterValue(cpu, r);
+    return setRegisterValue(nCpu, r, rol(rVal, 1));
 }
 
 pure Cpu rrla(Cpu cpu)
@@ -241,6 +326,19 @@ pure Cpu rrla(Cpu cpu)
     return nCpu;
 }
 
+pure Cpu rrc(Cpu cpu, Register r)
+{
+
+    Cpu nCpu = cpu;
+    Flags f;
+    nCpu.registers.f = f;
+
+    import core.bitop;
+
+    ubyte rVal = getRegisterValue(cpu, r);
+    return setRegisterValue(nCpu, r, ror(rVal, 1));
+}
+
 pure Cpu rrca(Cpu cpu)
 {
 
@@ -253,6 +351,20 @@ pure Cpu rrca(Cpu cpu)
     nCpu.registers.a = ror(nCpu.registers.a, 1);
 
     return nCpu;
+}
+
+pure Cpu rl(Cpu cpu, Register r)
+{
+    Cpu nCpu = cpu;
+    ushort cFlag = nCpu.registers.f.carry ? 1 : 0;
+    ubyte rVal = getRegisterValue(cpu, r);
+    ushort newA = cast(ushort)((rVal << 1) + cFlag);
+
+    Flags f;
+    f.carry = newA > 0xFF;
+    nCpu.registers.f = f;
+
+    return setRegisterValue(nCpu, r, cast(ubyte) newA);
 }
 
 // We have to test this thing. Nobody know what this is doing. Even the gods.
@@ -268,6 +380,24 @@ pure Cpu rla(Cpu cpu)
     nCpu.registers.a = cast(ubyte) newA;
 
     return nCpu;
+}
+
+pure Cpu rr(Cpu cpu, Register r)
+{
+    Cpu nCpu = cpu;
+    ushort cFlag = nCpu.registers.f.carry ? 1 : 0;
+    ubyte rVal = getRegisterValue(cpu, r);
+    ushort newA = cast(ushort)((rVal >> 1)
+            + (cFlag << 7)
+            + (
+                (rVal & 1) << 8
+            ));
+
+    Flags f;
+    f.carry = newA > 0xFF;
+    nCpu.registers.f = f;
+
+    return setRegisterValue(cpu, r, cast(ubyte) newA);
 }
 
 pure Cpu rra(Cpu cpu)
