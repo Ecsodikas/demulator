@@ -63,8 +63,29 @@ struct Cpu
 {
     Registers registers;
     ushort pc;
-    //ubyte[0xFFFF] memory;
+    ubyte[0xFFFF] memory;
 
+}
+
+pure Cpu step(Cpu cpu)
+{
+    import opcodes;
+
+    Cpu nCpu;
+
+    ubyte instructionByte = cpu.memory[cpu.pc];
+    bool prefixed = instructionByte == 0xCB;
+    if (prefixed)
+    {
+        instructionByte = cpu.memory[cpu.pc + 1];
+        nCpu = executeInstructionPrefixed(cpu, instructionByte);
+    }
+    else
+    {
+        nCpu = executeInstruction(cpu, instructionByte);
+    }
+
+    return nCpu;
 }
 
 pure ushort getRegisterAF(Cpu cpu)

@@ -5,6 +5,255 @@ import std.typecons;
 import cpu;
 import util;
 
+enum Jump
+{
+    Zero,
+    NotZero,
+    Carry,
+    NotCarry,
+    Always
+}
+
+enum LoadType
+{
+    Byte,
+    Word,
+    AFromIndirect,
+    IndirectFromA,
+    AFromByteAddress,
+    ByteAddressFromA
+}
+
+enum LoadByteTarget
+{
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    HLI
+}
+
+enum LoadByteSource
+{
+    A,
+    B,
+    C,
+    D,
+    E,
+    H,
+    L,
+    D8,
+    HLI
+}
+
+pure Cpu ld(Cpu cpu, LoadType lt, LoadByteTarget lbt, LoadByteSource lbs)
+{
+    final switch (lt)
+    {
+    case LoadType.Byte:
+        return ldByte(cpu, lbt, lbs);
+    case LoadType.Word:
+        return ldWord(cpu, lbt, lbs);
+    case LoadType.AFromByteAddress:
+        return ldAFromByteAddress(cpu, lbt, lbs);
+    case LoadType.ByteAddressFromA:
+        return ldByteAddressFromA(cpu, lbt, lbs);
+    case LoadType.IndirectFromA:
+        return ldIndirectFromA(cpu, lbt, lbs);
+    case LoadType.AFromIndirect:
+        return ldAFromIndirect(cpu, lbt, lbs);
+    }
+}
+
+pure Cpu ldWord(Cpu cpu, LoadByteTarget lbt, LoadByteSource lbs)
+{
+    Cpu nCpu;
+
+    ubyte sourceValue;
+    ubyte pcStep = 1;
+    final switch (lbs)
+    {
+    case LoadByteSource.A:
+        sourceValue = cpu.registers.a;
+        break;
+    case LoadByteSource.B:
+        sourceValue = cpu.registers.b;
+        break;
+    case LoadByteSource.C:
+        sourceValue = cpu.registers.c;
+        break;
+    case LoadByteSource.D:
+        sourceValue = cpu.registers.d;
+        break;
+    case LoadByteSource.E:
+        sourceValue = cpu.registers.e;
+        break;
+    case LoadByteSource.H:
+        sourceValue = cpu.registers.h;
+        break;
+    case LoadByteSource.L:
+        sourceValue = cpu.registers.l;
+        break;
+    case LoadByteSource.D8:
+        sourceValue = cpu.memory[cpu.pc + 1];
+        pcStep = 2;
+        break;
+    case LoadByteSource.HLI:
+        sourceValue = cpu.memory[cpu.getRegisterHL];
+        break;
+    }
+    final switch (lbt)
+    {
+    case LoadByteTarget.A:
+        nCpu.registers.a = sourceValue;
+        break;
+    case LoadByteTarget.B:
+        nCpu.registers.b = sourceValue;
+        break;
+    case LoadByteTarget.C:
+        nCpu.registers.c = sourceValue;
+        break;
+    case LoadByteTarget.D:
+        nCpu.registers.d = sourceValue;
+        break;
+    case LoadByteTarget.E:
+        nCpu.registers.e = sourceValue;
+        break;
+    case LoadByteTarget.L:
+        nCpu.registers.l = sourceValue;
+        break;
+    case LoadByteTarget.H:
+        nCpu.registers.h = sourceValue;
+        break;
+    case LoadByteTarget.HLI:
+        nCpu.memory[cpu.getRegisterHL] = sourceValue;
+        break;
+    }
+
+    nCpu.pc += pcStep;
+
+    return nCpu;
+}
+
+pure Cpu ldByte(Cpu cpu, LoadByteTarget lbt, LoadByteSource lbs)
+{
+    Cpu nCpu;
+
+    ubyte sourceValue;
+    ubyte pcStep = 1;
+    final switch (lbs)
+    {
+    case LoadByteSource.A:
+        sourceValue = cpu.registers.a;
+        break;
+    case LoadByteSource.B:
+        sourceValue = cpu.registers.b;
+        break;
+    case LoadByteSource.C:
+        sourceValue = cpu.registers.c;
+        break;
+    case LoadByteSource.D:
+        sourceValue = cpu.registers.d;
+        break;
+    case LoadByteSource.E:
+        sourceValue = cpu.registers.e;
+        break;
+    case LoadByteSource.H:
+        sourceValue = cpu.registers.h;
+        break;
+    case LoadByteSource.L:
+        sourceValue = cpu.registers.l;
+        break;
+    case LoadByteSource.D8:
+        sourceValue = cpu.memory[cpu.pc + 1];
+        pcStep = 2;
+        break;
+    case LoadByteSource.HLI:
+        sourceValue = cpu.memory[cpu.getRegisterHL];
+        break;
+    }
+    final switch (lbt)
+    {
+    case LoadByteTarget.A:
+        nCpu.registers.a = sourceValue;
+        break;
+    case LoadByteTarget.B:
+        nCpu.registers.b = sourceValue;
+        break;
+    case LoadByteTarget.C:
+        nCpu.registers.c = sourceValue;
+        break;
+    case LoadByteTarget.D:
+        nCpu.registers.d = sourceValue;
+        break;
+    case LoadByteTarget.E:
+        nCpu.registers.e = sourceValue;
+        break;
+    case LoadByteTarget.L:
+        nCpu.registers.l = sourceValue;
+        break;
+    case LoadByteTarget.H:
+        nCpu.registers.h = sourceValue;
+        break;
+    case LoadByteTarget.HLI:
+        nCpu.memory[cpu.getRegisterHL] = sourceValue;
+        break;
+    }
+
+    nCpu.pc += pcStep;
+
+    return nCpu;
+}
+
+pure Cpu jp(Cpu cpu, Jump test)
+{
+    Cpu nCpu = cpu;
+
+    bool jump = false;
+
+    switch (test)
+    {
+    case Jump.Zero:
+        jump = cpu.registers.f.zero;
+        break;
+    case Jump.NotZero:
+        jump = cpu.registers.f.zero;
+        break;
+    case Jump.Carry:
+        jump = cpu.registers.f.carry;
+        break;
+    case Jump.NotCarry:
+        jump = cpu.registers.f.carry;
+        break;
+    default:
+        jump = true;
+        break;
+    }
+
+    if (jump)
+    {
+        ushort lByte = cast(ushort) cpu.memory[cpu.pc + 1];
+        ushort mByte = cast(ushort) cpu.memory[cpu.pc + 2];
+        nCpu.pc = cast(ushort)((mByte << 8) | lByte);
+    }
+    else
+    {
+        nCpu.pc += 3;
+    }
+
+    return nCpu;
+}
+
+pure Cpu nop(Cpu cpu)
+{
+    Cpu nCpu = cpu;
+    nCpu.pc = cast(ushort)(cpu.pc + 1);
+    return nCpu;
+}
+
 pure Cpu swap(Cpu cpu, Register r)
 {
     Cpu nCpu = cpu;
